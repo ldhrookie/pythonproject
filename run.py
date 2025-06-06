@@ -59,6 +59,15 @@ def main():
 
     # 3) 잠깐 대기한 후 (Streamlit 서버가 켜질 시간을 줌)
     time.sleep(2)
+    
+    # 프로세스 상태 확인
+    if process.poll() is not None:
+        # 프로세스가 이미 종료됨
+        stdout, stderr = process.communicate()
+        print("❌ Streamlit 프로세스가 종료되었습니다.")
+        print("STDOUT:", stdout.decode('utf-8'))
+        print("STDERR:", stderr.decode('utf-8'))
+        return
 
     # 4) 로컬 및 네트워크 URL 계산
     local_url   = f"http://localhost:{port}"
@@ -76,6 +85,7 @@ def main():
     try:
         webbrowser.open(network_url, new=2)  # new=2: 새 탭 열기
     except Exception:
+        print('브라우저 열기 실패')
         pass
 
     # 7) 프로세스가 종료될 때까지 대기
@@ -88,3 +98,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    print('프로그램 종료')
