@@ -45,13 +45,13 @@ def is_logged_in():
 
 def init_session_state():
     """세션 상태 초기화"""
-    if "user_id" not in st.session_state:
+    if "initialized" not in st.session_state:
+        st.session_state.initialized = True
         st.session_state.user_id = None
         st.session_state.username = ""
         st.session_state.tier_index = 0
         st.session_state.rank_point = 0
         st.session_state.start_time = None
         st.session_state.today_flag = False
-        # 새로운 타이머 관련 상태
         st.session_state.session_id = None
         st.session_state.current_subject = "" 
