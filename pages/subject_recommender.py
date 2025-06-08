@@ -10,7 +10,8 @@ from database import (
 
 def render_subject_recommender():
     """과목 추천 시스템 UI"""
-    st.markdown("## 📚 과목별 시간 추천")
+    st.markdown("# 📚 과목별 시간 추천")
+    st.markdown("---")
     
     # 1. 과목 우선순위 설정
     st.markdown("### 1️⃣ 과목 우선순위 설정")
@@ -173,4 +174,14 @@ def generate_schedule(time_analysis, priorities):
         schedule[best_hour] = subject
         used_hours.add(best_hour)
     
-    return dict(sorted(schedule.items())) 
+    return dict(sorted(schedule.items()))
+st.set_page_config(page_title="과목별 시간 추천", page_icon="📚")
+render_subject_recommender()
+
+st.markdown("---")
+if st.button("🏠 메인 페이지", use_container_width=True):
+    st.switch_page("main.py")
+if st.button("📊 상세 분석", use_container_width=True):
+    st.switch_page("pages/analytics.py")
+if st.button("⏰ 시간대별 분석", use_container_width=True):
+    st.switch_page("pages/time_analysis.py")

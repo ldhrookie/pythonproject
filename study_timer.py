@@ -145,7 +145,18 @@ def complete_study_session(end_time, subject, felt_minutes):
     
     st.success(success_msg)
     if msg:
-        st.info(msg)
+
+        st.markdown(
+            f"""
+            <div style='position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+            background-color: rgb(25, 46, 67); padding: 20px; border-radius: 10px; 
+            box-shadow: 0 0 10px rgba(0,0,0,0.1); z-index: 1000;'>
+                <h4 style='margin: 0; color: rgb(199, 235, 255);'>🎉 {msg}</h4>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+        time.sleep(2) 
         # 티어가 올랐을 때만 풍선 효과와 소리 재생
         if "티어 상승" in msg:
             st.balloons()

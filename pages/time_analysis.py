@@ -3,8 +3,11 @@ import pandas as pd
 from datetime import datetime, time
 from database import get_user_logs
 
+
+
 def render_time_analysis():
-    st.markdown("## ⏰ 시간대별 분석")
+    st.markdown("# ⏰ 시간대별 분석")
+    st.markdown("---")
     
     # 1. 시간대 설정
     st.markdown("### 1️⃣ 시간대 설정")
@@ -83,5 +86,14 @@ def render_time_analysis():
         
         # 시각화 (Streamlit 기본 차트 사용)
         st.bar_chart(subject_stats['평균 집중도'])
-        
 
+st.set_page_config(page_title="시간대별 분석", page_icon="⏰")
+
+render_time_analysis()
+st.markdown("---")
+if st.button("🏠 메인 페이지", use_container_width=True):
+    st.switch_page("main.py")
+if st.button("📊 상세 분석", use_container_width=True):
+    st.switch_page("pages/analytics.py")
+if st.button("📚 과목별 시간 추천", use_container_width=True):
+    st.switch_page("pages/subject_recommender.py")

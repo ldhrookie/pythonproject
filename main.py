@@ -3,9 +3,9 @@ from database import init_db
 from auth import render_login_signup, logout, is_logged_in, init_session_state
 from utils import render_user_info, update_daily_tier_progress
 from study_timer import render_study_timer
-from analytics import render_recent_logs, render_analytics_tabs
-from time_analysis import render_time_analysis
-from subject_recommender import render_subject_recommender
+from analytics import render_recent_logs#, render_analytics_tabs
+# from pages.time_analysis import render_time_analysis
+# from pages.subject_recommender import render_subject_recommender
 
 # 앱 초기화
 init_db()
@@ -42,19 +42,16 @@ render_recent_logs()
 st.markdown("---")
 
 # 상세 분석 탭들
-render_analytics_tabs()
+# render_analytics_tabs()
 
-st.markdown("---")
-
-# 시간대별 분석
-render_time_analysis()
-
-st.markdown("---")
-
-# 과목별 시간 추천
-render_subject_recommender()
-
-st.markdown("---")
+# 페이지 이동 버튼들
+# st.markdown("---")
+if st.button("📊 상세 분석", use_container_width=True):
+    st.switch_page("pages/analytics.py")
+if st.button("⏰ 시간대별 분석", use_container_width=True):
+    st.switch_page("pages/time_analysis.py")
+if st.button("📚 과목별 시간 추천", use_container_width=True):
+    st.switch_page("pages/subject_recommender.py")
 
 # 로그아웃
 if st.button("🚪 로그아웃"):
