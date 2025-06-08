@@ -59,7 +59,7 @@ def main():
 
     # 3) 잠깐 대기한 후 (Streamlit 서버가 켜질 시간을 줌)
     time.sleep(2)
-    
+
     # 프로세스 상태 확인
     if process.poll() is not None:
         # 프로세스가 이미 종료됨

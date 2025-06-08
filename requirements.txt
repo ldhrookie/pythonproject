@@ -1,3 +1,4 @@
 streamlit
 pandas
-plotly
+extra_streamlit_components
+pygame
