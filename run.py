@@ -46,7 +46,7 @@ def main():
 
     # 2) Streamlit 서버 실행 (백그라운드)
     cmd = [
-        python_cmd, "-m", "streamlit", "run", "main_streamlit.py",
+        python_cmd, "-m", "streamlit", "run", "main.py",
         "--server.address", "0.0.0.0",
         "--server.port", str(port),
         "--server.headless", "true"
