@@ -4,10 +4,10 @@ from datetime import datetime, time
 from database import get_user_logs
 
 def render_time_analysis():
-    st.title("⏰ 시간대별 분석")
+    st.markdown("## ⏰ 시간대별 분석")
     
     # 1. 시간대 설정
-    st.header("1️⃣ 시간대 설정")
+    st.markdown("### 1️⃣ 시간대 설정")
     
     # 기존 시간대 목록 표시
     if "time_slots" not in st.session_state:
@@ -45,7 +45,7 @@ def render_time_analysis():
     st.markdown("---")
     
     # 2. 시간대별 분석
-    st.header("2️⃣ 시간대별 분석")
+    st.markdown("### 2️⃣ 시간대별 분석")
     
     # 데이터 가져오기
     df = get_user_logs(st.session_state.user_id)
@@ -84,5 +84,4 @@ def render_time_analysis():
         # 시각화 (Streamlit 기본 차트 사용)
         st.bar_chart(subject_stats['평균 집중도'])
         
-        st.markdown("---")
 

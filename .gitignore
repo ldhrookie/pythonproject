@@ -163,3 +163,7 @@ Thumbs.db
 
 # Image cache/thumbnails
 *.cache
+
+# 더미 데이터 관련 파일
+create_dummy_data.py
+delete_dummy_data.py

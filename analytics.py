@@ -6,7 +6,7 @@ from database import get_user_logs, delete_study_log
 
 def render_recent_logs():
     """최근 공부 기록만 표시 (메인 페이지용)"""
-    st.header("📊 공부 기록")
+    st.markdown("## 📊 공부 기록")
     df = get_user_logs(st.session_state.user_id)
     
     if df.empty:
@@ -100,7 +100,7 @@ def render_recent_logs():
 
 def render_analytics_tabs():
     """상세 분석 탭들 렌더링"""
-    st.header("📈 상세 분석")
+    st.markdown("## 📈 상세 분석")
     df = get_user_logs(st.session_state.user_id)
     
     if df.empty:
@@ -182,9 +182,8 @@ def render_daily_trend(df):
     st.subheader("날짜별 공부 시간 트렌드")
     df["date"] = df["start_time"].dt.date
     daily = df.groupby("date").agg({
-        'duration': 'sum',
-        'id': 'count'
-    }).rename(columns={'duration': '총 공부시간(분)', 'id': '세션 수'})
+        'duration': ['sum', 'count']
+    }).rename(columns={'duration': '총 공부시간(분)', 'count': '세션 수'})
     
     if not daily.empty:
         st.line_chart(daily['총 공부시간(분)'])

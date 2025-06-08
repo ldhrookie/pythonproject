@@ -2,19 +2,34 @@
 
 import streamlit as st
 from datetime import datetime
+import pandas as pd
+import time
+import os
 from database import (
     start_study_session, 
     finish_study_session, 
     cancel_study_session,
     get_active_session,
-    update_user_tier_data, 
-    get_today_total_study_time
+    get_today_total_study_time,
+    get_user_tier,
+    update_user_tier,
 )
-from tier_logic import update_tier_and_score
+from tier_logic import update_tier_and_score, Tier
+
+def play_tier_up_sound():
+    """티어 업 소리 재생"""
+    try:
+        import pygame
+        pygame.mixer.init()
+        pygame.mixer.music.load("tier_up.mp3")
+        pygame.mixer.music.play()
+        time.sleep(2)  # 소리가 끝날 때까지 대기
+    except:
+        st.error("티어 업 소리를 재생할 수 없습니다.")
 
 def render_study_timer():
     """공부 타이머 UI 렌더링"""
-    st.header("⏱ 공부 타이머")
+    st.markdown("## ⏱ 공부 타이머")
     
     # 현재 시간
     current_time = datetime.now()
@@ -114,7 +129,7 @@ def complete_study_session(end_time, subject, felt_minutes):
     )
     
     # DB에 티어 정보 업데이트
-    update_user_tier_data(st.session_state.user_id, new_rank, new_point)
+    update_user_tier(st.session_state.user_id, new_rank, new_point)
     
     # 세션 상태 초기화
     clear_session_state()
@@ -131,6 +146,10 @@ def complete_study_session(end_time, subject, felt_minutes):
     st.success(success_msg)
     if msg:
         st.info(msg)
+        # 티어가 올랐을 때만 풍선 효과와 소리 재생
+        if "티어 상승" in msg:
+            st.balloons()
+            play_tier_up_sound()
     
     st.rerun()
 

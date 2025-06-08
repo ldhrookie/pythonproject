@@ -5,6 +5,7 @@ from utils import render_user_info, update_daily_tier_progress
 from study_timer import render_study_timer
 from analytics import render_recent_logs, render_analytics_tabs
 from time_analysis import render_time_analysis
+from subject_recommender import render_subject_recommender
 
 # 앱 초기화
 init_db()
@@ -13,7 +14,7 @@ st.set_page_config(page_title="공부 시스템", layout="centered")
 # 세션 상태 초기화 (한 번만 실행)
 init_session_state()
 
-st.title("📚 공부 타이머")
+st.markdown("## 📚 공부 타이머")
 
 # 1) 로그인되지 않은 경우 - 로그인/회원가입 화면
 if not is_logged_in():
@@ -47,6 +48,11 @@ st.markdown("---")
 
 # 시간대별 분석
 render_time_analysis()
+
+st.markdown("---")
+
+# 과목별 시간 추천
+render_subject_recommender()
 
 st.markdown("---")
 
