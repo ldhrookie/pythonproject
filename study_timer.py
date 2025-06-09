@@ -2,9 +2,7 @@
 
 import streamlit as st
 from datetime import datetime
-import pandas as pd
 import time
-import os
 from database import (
     start_study_session, 
     finish_study_session, 

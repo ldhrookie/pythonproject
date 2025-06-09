@@ -22,7 +22,7 @@ def init_db():
     )
     ''')
     
-    # 공부 기록 테이블
+    # 공부 기록 테이블 (통합)
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS study_logs (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -36,6 +36,11 @@ def init_db():
         FOREIGN KEY (user_id) REFERENCES users (id)
     )
     ''')
+    
+    # 인덱스 생성
+    cursor.execute('CREATE INDEX IF NOT EXISTS idx_study_logs_user_id ON study_logs(user_id)')
+    cursor.execute('CREATE INDEX IF NOT EXISTS idx_study_logs_start_time ON study_logs(start_time)')
+    cursor.execute('CREATE INDEX IF NOT EXISTS idx_study_logs_subject ON study_logs(subject)')
     
     # 과목 우선순위 테이블
     cursor.execute('''
@@ -75,15 +80,24 @@ def create_user_log_table(user_id):
     conn.close()
     return table_name
 
-def get_user_by_credentials(username, password):
-    """로그인 인증"""
+def get_user_by_credentials(username=None, password=None, user_id=None):
+    """로그인 인증 또는 user_id로 사용자 정보 조회"""
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    cursor.execute("""
-        SELECT id, username, tier_index, rank_point 
-          FROM users 
-         WHERE username = ? AND password = ?
-    """, (username, password))
+    
+    if user_id is not None:
+        cursor.execute("""
+            SELECT id, username, tier_index, rank_point 
+            FROM users 
+            WHERE id = ?
+        """, (user_id,))
+    else:
+        cursor.execute("""
+            SELECT id, username, tier_index, rank_point 
+            FROM users 
+            WHERE username = ? AND password = ?
+        """, (username, password))
+    
     row = cursor.fetchone()
     conn.close()
     return row
@@ -105,24 +119,19 @@ def create_user(username, password):
         return False
 
 def get_today_total_study_time(user_id):
-    """사용자의 오늘 공부 총 시간 조회 (개별 테이블에서)"""
-    table_name = f"log_user_{user_id}"
+    """사용자의 오늘 공부 총 시간 조회"""
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     
-    # 테이블 존재 확인
-    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table_name,))
-    if not cursor.fetchone():
-        conn.close()
-        return 0
-    
     today_str = date.today().isoformat()
-    cursor.execute(f"""
-        SELECT SUM( (julianday(end_time) - julianday(start_time)) * 24 * 60 )
-          FROM {table_name}
-         WHERE DATE(start_time) = ?
-           AND end_time IS NOT NULL
-    """, (today_str,))
+    cursor.execute("""
+        SELECT SUM(duration)
+        FROM study_logs
+        WHERE user_id = ? 
+        AND DATE(start_time) = ?
+        AND end_time IS NOT NULL
+    """, (user_id, today_str))
+    
     result = cursor.fetchone()[0]
     conn.close()
     return int(result) if result else 0
@@ -160,48 +169,40 @@ def get_user_logs(user_id):
         'concentrate_rate'
     ])
     
-    # 시간 형식 변환
-    df['start_time'] = pd.to_datetime(df['start_time'])
-    df['end_time'] = pd.to_datetime(df['end_time'])
+    # 시간 형식 변환 (ISO8601 형식으로 파싱)
+    df['start_time'] = pd.to_datetime(df['start_time'], format='ISO8601')
+    df['end_time'] = pd.to_datetime(df['end_time'], format='ISO8601')
     
     return df
 
 def start_study_session(user_id, start_time, subject=""):
-    """공부 세션 시작 - 사용자별 테이블에 기록 (end_time은 NULL)"""
-    # 테이블이 없으면 생성
-    create_user_log_table(user_id)
-    
-    table_name = f"log_user_{user_id}"
+    """공부 세션 시작"""
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    cursor.execute(f"""
-        INSERT INTO {table_name} (start_time, end_time, subject, felt_minutes, concentrate_rate) 
-        VALUES (?, NULL, ?, NULL, NULL)
-    """, (start_time.isoformat(), subject))
+    
+    cursor.execute("""
+        INSERT INTO study_logs (user_id, start_time, subject) 
+        VALUES (?, ?, ?)
+    """, (user_id, start_time.isoformat(), subject))
+    
     session_id = cursor.lastrowid
     conn.commit()
     conn.close()
     return session_id
 
 def get_active_session(user_id):
-    """진행 중인 세션 조회 (사용자별 테이블에서 end_time이 NULL인 마지막 레코드)"""
-    table_name = f"log_user_{user_id}"
+    """진행 중인 세션 조회"""
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     
-    # 테이블 존재 확인
-    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table_name,))
-    if not cursor.fetchone():
-        conn.close()
-        return None
-    
-    cursor.execute(f"""
+    cursor.execute("""
         SELECT id, start_time, subject 
-        FROM {table_name}
-        WHERE end_time IS NULL
+        FROM study_logs
+        WHERE user_id = ? AND end_time IS NULL
         ORDER BY start_time DESC 
         LIMIT 1
-    """)
+    """, (user_id,))
+    
     row = cursor.fetchone()
     conn.close()
     
@@ -215,12 +216,12 @@ def get_active_session(user_id):
 
 def finish_study_session(session_id, user_id, end_time, subject, felt_minutes):
     """진행 중인 세션 완료"""
-    table_name = f"log_user_{user_id}"
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     
     # 세션 정보 조회
-    cursor.execute(f"SELECT start_time FROM {table_name} WHERE id = ?", (session_id,))
+    cursor.execute("SELECT start_time FROM study_logs WHERE id = ? AND user_id = ?", 
+                  (session_id, user_id))
     row = cursor.fetchone()
     if not row:
         conn.close()
@@ -233,11 +234,11 @@ def finish_study_session(session_id, user_id, end_time, subject, felt_minutes):
         rate = round(min(100, max(0, (felt_minutes / duration_minutes) * 100)), 2)
     
     # 세션 완료 처리
-    cursor.execute(f"""
-        UPDATE {table_name}
-        SET end_time = ?, subject = ?, felt_minutes = ?, concentrate_rate = ?
-        WHERE id = ?
-    """, (end_time.isoformat(), subject, felt_minutes, rate, session_id))
+    cursor.execute("""
+        UPDATE study_logs
+        SET end_time = ?, subject = ?, felt_minutes = ?, concentrate_rate = ?, duration = ?
+        WHERE id = ? AND user_id = ?
+    """, (end_time.isoformat(), subject, felt_minutes, rate, duration_minutes, session_id, user_id))
     
     conn.commit()
     conn.close()

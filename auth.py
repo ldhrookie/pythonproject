@@ -1,51 +1,41 @@
 # auth.py
 
 import streamlit as st
-import time
-from datetime import datetime, timedelta
-import json
 from database import get_user_by_credentials, create_user
 from tier_logic import Tier
 import extra_streamlit_components as stx
 
 # 전역 쿠키 매니저
-cookie_manager = stx.CookieManager(key="auth_cookie_manager")
+cookie_manager = stx.CookieManager()
 
-def create_session_cookie(username):
-    """세션 쿠키 생성"""
-    session_data = {
-        'username': username,
-        'expires': (datetime.now() + timedelta(days=7)).timestamp()
-    }
-    return json.dumps(session_data)
+def init_session_state():
+    """세션 상태 초기화"""
+    if "initialized" not in st.session_state:
+        st.session_state.initialized = True
+        st.session_state.user_id = None
+        st.session_state.username = ""
+        st.session_state.tier_index = 0
+        st.session_state.rank_point = 0
+        st.session_state.start_time = None
+        st.session_state.today_flag = False
+        st.session_state.current_subject = ""
 
-def verify_session_cookie(session_cookie):
-    """세션 쿠키 검증"""
-    try:
-        session_data = json.loads(session_cookie)
-        if session_data['expires'] < time.time():
-            return None
-        return session_data['username']
-    except:
-        return None
+def is_logged_in():
+    """로그인 여부 확인"""
+    user_id = cookie_manager.get('user_id')
+    if user_id:
+        # 쿠키에 있는 user_id로 사용자 정보 가져오기
+        user = get_user_by_credentials(None, None, user_id=int(user_id))
+        if user:
+            st.session_state.user_id = user[0]
+            st.session_state.username = user[1]
+            st.session_state.tier_index = user[2]
+            st.session_state.rank_point = user[3]
+            return True
+    return False
 
 def render_login_signup():
     """로그인/회원가입 UI 렌더링"""
-    # 쿠키에서 세션 확인
-    session_cookie = cookie_manager.get('session')
-    if session_cookie:
-        username = verify_session_cookie(session_cookie)
-        if username:
-            user = get_user_by_credentials(username, "")  # 비밀번호는 검증하지 않음
-            if user:
-                st.session_state.user_id = user[0]
-                st.session_state.username = user[1]
-                st.session_state.tier_index = user[2]
-                st.session_state.rank_point = user[3]
-                st.session_state.today_flag = False
-                st.success(f"{user[1]}님, 환영합니다! (티어: {Tier[user[2]]}, 점수: {user[3]})")
-                return
-    
     tab1, tab2 = st.tabs(["🔐 로그인", "🆕 회원가입"])
     
     with tab1:
@@ -54,9 +44,8 @@ def render_login_signup():
         if st.button("로그인"):
             user = get_user_by_credentials(username_input, password_input)
             if user:
-                # 세션 쿠키 생성 및 저장
-                session_cookie = create_session_cookie(username_input)
-                cookie_manager.set('session', session_cookie, expires_at=datetime.now() + timedelta(days=7))
+                # 로그인 성공 시 쿠키에 user_id 저장
+                cookie_manager.set('user_id', str(user[0]), expires_at=None)
                 
                 st.session_state.user_id = user[0]
                 st.session_state.username = user[1]
@@ -79,31 +68,9 @@ def render_login_signup():
 
 def logout():
     """로그아웃 처리"""
-    cookie_manager.delete('session')
+    cookie_manager.delete('user_id')
     
     for key in ["user_id", "username", "tier_index", "rank_point", "start_time", "today_flag"]:
         if key in st.session_state:
             st.session_state.pop(key)
     st.rerun()
-
-def is_logged_in():
-    """로그인 여부 확인"""
-    session_cookie = cookie_manager.get('session')
-    
-    if session_cookie:
-        username = verify_session_cookie(session_cookie)
-        if username:
-            return True
-    return False
-
-def init_session_state():
-    """세션 상태 초기화"""
-    if "initialized" not in st.session_state:
-        st.session_state.initialized = True
-        st.session_state.user_id = None
-        st.session_state.username = ""
-        st.session_state.tier_index = 0
-        st.session_state.rank_point = 0
-        st.session_state.start_time = None
-        st.session_state.today_flag = False
-        st.session_state.current_subject = ""
