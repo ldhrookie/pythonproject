@@ -7,7 +7,6 @@ def render_analytics():
     render_analytics_tabs()
 
 
-st.set_page_config(page_title="상세 분석", page_icon="📊")
 render_analytics()
 st.markdown("---")
 if st.button("🏠 메인 페이지", use_container_width=True):

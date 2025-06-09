@@ -1,4 +1,8 @@
 import streamlit as st
+
+# 페이지 설정 (반드시 첫 번째 Streamlit 명령어여야 함)
+st.set_page_config(page_title="공부 시스템", layout="centered")
+
 from database import init_db
 from auth import render_login_signup, logout, is_logged_in, init_session_state
 from utils import render_user_info, update_daily_tier_progress
@@ -9,7 +13,6 @@ from analytics import render_recent_logs#, render_analytics_tabs
 
 # 앱 초기화
 init_db()
-st.set_page_config(page_title="공부 시스템", layout="centered")
 
 # 세션 상태 초기화 (한 번만 실행)
 init_session_state()

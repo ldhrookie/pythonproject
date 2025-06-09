@@ -87,8 +87,6 @@ def render_time_analysis():
         # 시각화 (Streamlit 기본 차트 사용)
         st.bar_chart(subject_stats['평균 집중도'])
 
-st.set_page_config(page_title="시간대별 분석", page_icon="⏰")
-
 render_time_analysis()
 st.markdown("---")
 if st.button("🏠 메인 페이지", use_container_width=True):

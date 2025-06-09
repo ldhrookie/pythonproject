@@ -49,7 +49,10 @@ def main():
         python_cmd, "-m", "streamlit", "run", "main.py",
         "--server.address", "0.0.0.0",
         "--server.port", str(port),
-        "--server.headless", "true"
+        "--server.headless", "true",
+        "--logger.level", "debug",
+        "--server.enableCORS", "false",
+        "--server.enableXsrfProtection", "false"
     ]
     try:
         process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
