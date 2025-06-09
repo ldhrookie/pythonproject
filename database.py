@@ -143,6 +143,7 @@ def get_user_logs(user_id):
     
     cursor.execute("""
         SELECT 
+            id,
             start_time,
             end_time,
             subject,
@@ -161,6 +162,7 @@ def get_user_logs(user_id):
         return pd.DataFrame()
     
     df = pd.DataFrame(logs, columns=[
+        'id',
         'start_time',
         'end_time',
         'subject',
@@ -261,18 +263,11 @@ def delete_study_log(user_id, log_id):
     log_id = int(log_id)
     user_id = int(user_id)
     
-    table_name = f"log_user_{user_id}"
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     
-    # 테이블 존재 확인
-    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table_name,))
-    if not cursor.fetchone():
-        conn.close()
-        return False
-    
     # 기록 삭제
-    cursor.execute(f"DELETE FROM {table_name} WHERE id = ?", (log_id,))
+    cursor.execute("DELETE FROM study_logs WHERE id = ? AND user_id = ?", (log_id, user_id))
     deleted = cursor.rowcount > 0
     
     conn.commit()
