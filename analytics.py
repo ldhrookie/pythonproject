@@ -3,7 +3,7 @@
 import streamlit as st
 import pandas as pd
 from database import get_user_logs, delete_study_log
-from utils import safe_parse_datetime
+from database import safe_parse_datetime
 
 def render_recent_logs():
     """최근 공부 기록만 표시 (메인 페이지용)"""
