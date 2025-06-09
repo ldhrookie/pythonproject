@@ -4,7 +4,6 @@ import streamlit as st
 import os
 from tier_logic import Tier, update_tier_and_score
 from database import get_today_total_study_time
-
 TIER_IMAGE_DIR = "tier"
 
 def get_tier_image_filename(tier_name):
