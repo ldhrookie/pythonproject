@@ -140,7 +140,6 @@ def render_subject_recommender():
     # 표로 출력
     st.table(pd.DataFrame(concentration_data))
 
-st.set_page_config(page_title="과목별 시간 추천", page_icon="📚")
 render_subject_recommender()
 
 st.markdown("---")
