@@ -1,11 +1,30 @@
 import streamlit as st
 import pandas as pd
 from datetime import time
-from database import get_user_logs
+from database import get_user_logs, safe_parse_datetime
 
 
 
 def render_time_analysis():
+    """시간대별 분석 페이지"""
+    st.title("⏰ 시간대별 분석")
+    
+    # 데이터 로드
+    df = get_user_logs(st.session_state.user_id)
+    if df.empty:
+        st.info("아직 공부 기록이 없습니다.")
+        return
+    
+    # 시간 형식 변환
+    df['start_time'] = df['start_time'].apply(safe_parse_datetime)
+    
+    # 시간대별 통계
+    df['hour'] = df['start_time'].dt.hour
+    hourly_stats = df.groupby('hour').agg({
+        'duration': ['count', 'mean'],
+        'concentrate_rate': 'mean'
+    }).round(2)
+    
     st.markdown("# ⏰ 시간대별 분석")
     st.markdown("---")
     
@@ -50,22 +69,12 @@ def render_time_analysis():
     # 2. 시간대별 분석
     st.markdown("### 2️⃣ 시간대별 분석")
     
-    # 데이터 가져오기
-    df = get_user_logs(st.session_state.user_id)
-    if df.empty:
-        st.warning("아직 공부 기록이 없습니다.")
-        return
-    
-    # 시간 데이터 전처리
-    df['start_time'] = pd.to_datetime(df['start_time'])
-    df['start_hour'] = df['start_time'].dt.time
-    
-    # 각 시간대별 분석
+    # 시간대별 분석
     for slot in st.session_state.time_slots:
         st.subheader(f"📊 {slot['name']} 분석")
         
         # 해당 시간대의 데이터 필터링
-        mask = (df['start_hour'] >= slot['start']) & (df['start_hour'] <= slot['end'])
+        mask = (df['start_time'].dt.hour >= slot['start'].hour) & (df['start_time'].dt.hour <= slot['end'].hour)
         time_slot_df = df[mask].copy()
         
         if time_slot_df.empty:

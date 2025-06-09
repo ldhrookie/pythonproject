@@ -6,6 +6,25 @@ from datetime import date, datetime
 
 DB_PATH = "site.db"
 
+def safe_parse_datetime(dt_str):
+    """안전한 시간 형식 파싱"""
+    if pd.isna(dt_str):
+        return None
+    try:
+        # ISO8601 형식 시도
+        return pd.to_datetime(dt_str, format='ISO8601')
+    except:
+        try:
+            # 마이크로초 포함 형식 시도
+            return pd.to_datetime(dt_str, format='%Y-%m-%dT%H:%M:%S.%f')
+        except:
+            try:
+                # 기본 ISO 형식 시도
+                return pd.to_datetime(dt_str, format='%Y-%m-%dT%H:%M:%S')
+            except:
+                # 마지막 시도: 자동 감지
+                return pd.to_datetime(dt_str)
+
 def init_db():
     """데이터베이스 초기화"""
     conn = sqlite3.connect(DB_PATH)
@@ -171,9 +190,10 @@ def get_user_logs(user_id):
         'concentrate_rate'
     ])
     
-    # 시간 형식 변환 (ISO8601 형식으로 파싱)
-    df['start_time'] = pd.to_datetime(df['start_time'], format='ISO8601')
-    df['end_time'] = pd.to_datetime(df['end_time'], format='ISO8601')
+   
+    
+    df['start_time'] = df['start_time'].apply(safe_parse_datetime)
+    df['end_time'] = df['end_time'].apply(safe_parse_datetime)
     
     return df
 
@@ -185,7 +205,7 @@ def start_study_session(user_id, start_time, subject=""):
     cursor.execute("""
         INSERT INTO study_logs (user_id, start_time, subject) 
         VALUES (?, ?, ?)
-    """, (user_id, start_time.isoformat(), subject))
+    """, (user_id, start_time.strftime('%Y-%m-%dT%H:%M:%S'), subject))
     
     session_id = cursor.lastrowid
     conn.commit()
@@ -211,7 +231,7 @@ def get_active_session(user_id):
     if row:
         return {
             'id': row[0],
-            'start_time': datetime.fromisoformat(row[1]),
+            'start_time': safe_parse_datetime(row[1]),
             'subject': row[2] or ""
         }
     return None
@@ -229,7 +249,7 @@ def finish_study_session(session_id, user_id, end_time, subject, felt_minutes):
         conn.close()
         return 0
     
-    start_time = datetime.fromisoformat(row[0])
+    start_time = safe_parse_datetime(row[0])
     duration_minutes = int((end_time - start_time).total_seconds() / 60)
     rate = 0.0
     if duration_minutes > 0:
@@ -240,7 +260,7 @@ def finish_study_session(session_id, user_id, end_time, subject, felt_minutes):
         UPDATE study_logs
         SET end_time = ?, subject = ?, felt_minutes = ?, concentrate_rate = ?, duration = ?
         WHERE id = ? AND user_id = ?
-    """, (end_time.isoformat(), subject, felt_minutes, rate, duration_minutes, session_id, user_id))
+    """, (end_time.strftime('%Y-%m-%dT%H:%M:%S'), subject, felt_minutes, rate, duration_minutes, session_id, user_id))
     
     conn.commit()
     conn.close()
@@ -416,4 +436,29 @@ def get_subject_concentration_by_time(user_id):
             'count': count
         }
     
-    return time_analysis 
+    return time_analysis
+
+def get_daily_stats(user_id):
+    """일일 통계 조회"""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    
+    today_str = date.today().isoformat()
+    
+    cursor.execute("""
+        SELECT 
+            strftime('%H', start_time) as hour,
+            COUNT(*) as count,
+            AVG(duration) as avg_duration,
+            AVG(concentrate_rate) as avg_rate
+        FROM study_logs
+        WHERE user_id = ? 
+        AND date(start_time) = ?
+        GROUP BY hour
+        ORDER BY hour
+    """, (user_id, today_str))
+    
+    stats = cursor.fetchall()
+    conn.close()
+    
+    return stats 

@@ -3,6 +3,7 @@
 import streamlit as st
 import pandas as pd
 from database import get_user_logs, delete_study_log
+from utils import safe_parse_datetime
 
 def render_recent_logs():
     """최근 공부 기록만 표시 (메인 페이지용)"""
@@ -12,6 +13,10 @@ def render_recent_logs():
     if df.empty:
         st.write("아직 기록이 없습니다.")
         return
+    
+    # 시간 형식 변환
+    df["start_time"] = df["start_time"].apply(safe_parse_datetime)
+    df["end_time"] = df["end_time"].apply(safe_parse_datetime)
     
     # 데이터 전처리
     df = preprocess_logs(df)
