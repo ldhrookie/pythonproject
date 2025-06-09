@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-from datetime import datetime, time
 from database import (
     get_user_logs,
     get_subject_priorities,
@@ -141,40 +140,6 @@ def render_subject_recommender():
     # 표로 출력
     st.table(pd.DataFrame(concentration_data))
 
-def generate_schedule(time_analysis, priorities):
-    """시간표 생성"""
-    schedule = {}
-    used_hours = set()
-    
-    # 우선순위가 높은 순서대로 정렬
-    sorted_subjects = sorted(
-        priorities.items(),
-        key=lambda x: x[1]['priority'],
-        reverse=True
-    )
-    
-    for subject, info in sorted_subjects:
-        if subject not in time_analysis:
-            continue
-            
-        # 해당 과목의 시간대별 집중도
-        hours = time_analysis[subject]
-        
-        # 사용 가능한 시간대 중 가장 집중도가 높은 시간 선택
-        available_hours = {
-            hour: data['concentration']
-            for hour, data in hours.items()
-            if hour not in used_hours
-        }
-        
-        if not available_hours:
-            continue
-            
-        best_hour = max(available_hours.items(), key=lambda x: x[1])[0]
-        schedule[best_hour] = subject
-        used_hours.add(best_hour)
-    
-    return dict(sorted(schedule.items()))
 st.set_page_config(page_title="과목별 시간 추천", page_icon="📚")
 render_subject_recommender()
 
